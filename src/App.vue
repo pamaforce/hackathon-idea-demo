@@ -17,7 +17,7 @@
       }" v-if="!hasVoice && !showOk" />
       <img src="./assets/input.png" class="input" v-if="isInactive && !hasVoice" />
       <div class="recommend" v-if="isInactive && !hasVoice">
-        <div class="recommend_item" v-for="(item, i) in recommendList" :key="i"
+        <div class="recommend_item" v-for="(item, i) in recommendList" :key="i" @click="setOkState"
           :style="{ animationDelay: `${1 + i * 0.3}s`, backgroundImage: `url(${getImageUrl(i)})` }">{{ item }}</div>
       </div>
       <img src="./assets/settings.png" class="settings" v-if="isInactive && !hasVoice">
@@ -58,6 +58,7 @@ let showFullscreenButton = ref(true);
 let recommendList = ref(['头像双击动作', '深色模式', '字体大小', '颜色', '更多']);
 const handleClick = () => {
   step.value++;
+  showFullscreenButton.value = false;
   if (step.value === 1) {
     showMessage.value = true;
   } else if (step.value === 2) {
@@ -121,6 +122,20 @@ const getImageUrl = (index) => {
       return new URL(`./assets/text_bg_3.png`, import.meta.url).href;
   }
 };
+const setOkState = () => {
+  hasVoice.value = false;
+  isInactive.value = false;
+  showOk.value = true;
+  countdown.value = 3;
+  let timerId = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--;
+    } else {
+      clearInterval(timerId);
+      showOver.value = true;
+    }
+  }, 1000);
+};
 const showVoiceResult = () => {
   if (isInactive.value) return;
   text.value = '';
@@ -136,17 +151,7 @@ const showVoiceResult = () => {
         clearInterval(timer);
         setTimeout(() => { clearInterval(intervalId) }, 1500)
         setTimeout(() => {
-          hasVoice.value = false;
-          showOk.value = true;
-          countdown.value = 3;
-          let timerId = setInterval(() => {
-            if (countdown.value > 0) {
-              countdown.value--;
-            } else {
-              clearInterval(timerId);
-              showOver.value = true;
-            }
-          }, 1000);
+          setOkState();
         }, 1800);
       }
     }, 150);
@@ -172,7 +177,7 @@ const randomFluctuation = (range) => {
 watch(isInactive, (newVal) => {
   if (!newVal) {
     setTimeout(() => {
-      showVoiceResult();
+      if (hasVoice.value) showVoiceResult();
     }, 2000);
   }
 });
@@ -265,8 +270,8 @@ onMounted(() => {
   width: var(--width);
   position: fixed;
   bottom: 0;
-  left: 0;
   transition: all 0.5s;
+  left: calc(50% - var(--width) / 2);
 }
 
 .tip {
