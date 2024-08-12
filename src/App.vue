@@ -276,9 +276,9 @@ onMounted(() => {
 
 .tip {
   width: var(--width);
-  position: absolute;
+  position: fixed;
   bottom: 0;
-  left: 0;
+  left: calc(50% - var(--width) / 2);
   animation: fadeIn 0.5s forwards;
 }
 
