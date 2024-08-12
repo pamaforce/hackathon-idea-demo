@@ -1,37 +1,41 @@
 <template>
   <main class="main">
-    <img src="./assets/qq_top.png" class="top" draggable="false">
-    <img src="./assets/qq_message.png" class="message" v-if="showMessage">
-    <img src="./assets/qq_pat.png" class="pat" v-if="showPat && !showOk" />
-    <img src="./assets/qq_bottom.png"
-      :class="{ 'bottom': true, 'bottom_move': showResult, 'bottom_move_2': showOk, 'bottom_move_3': showOver }">
-    <img src="./assets/sdk_tip.png" class="tip" v-if="showTip">
-    <canvas v-if="showCanvas" ref="canvas" class="canvas"></canvas>
-    <div class="scan" v-if="showScan && !showOk"></div>
-    <img src="./assets/left_bottom.svg" class="l_b" v-if="showScan && !showOk">
-    <img src="./assets/right_top.svg" class="r_t" v-if="showScan && !showOk">
-    <div :class="{ 'scan_result': true, 'scan_ok': showOk, 'scan_over': showOver }" v-if="showResult">
-      <img src="./assets/siri.png" @click="changeActive" :class="{
-        'siri': true,
-        'siri_inactive': isInactive
-      }" v-if="!hasVoice && !showOk" />
-      <img src="./assets/input.png" class="input" v-if="isInactive && !hasVoice" />
-      <div class="recommend" v-if="isInactive && !hasVoice">
-        <div class="recommend_item" v-for="(item, i) in recommendList" :key="i" @click="setOkState"
-          :style="{ animationDelay: `${1 + i * 0.3}s`, backgroundImage: `url(${getImageUrl(i)})` }">{{ item }}</div>
+    <div v-if="isFirstScene" @click="handleClick">
+      <img src="./assets/qq_top.png" class="top" draggable="false">
+      <img src="./assets/qq_message.png" class="message" v-if="showMessage">
+      <img src="./assets/qq_pat.png" class="pat" v-if="showPat && !showOk" />
+      <img src="./assets/qq_bottom.png"
+        :class="{ 'bottom': true, 'bottom_move': showResult, 'bottom_move_2': showOk, 'bottom_move_3': showOver }">
+      <img src="./assets/sdk_tip.png" class="tip" v-if="showTip">
+      <canvas v-if="showCanvas" ref="canvas" class="canvas"></canvas>
+      <div class="scan" v-if="showScan && !showOk"></div>
+      <img src="./assets/left_bottom.svg" class="l_b" v-if="showScan && !showOk">
+      <img src="./assets/right_top.svg" class="r_t" v-if="showScan && !showOk">
+      <div :class="{ 'scan_result': true, 'scan_ok': showOk, 'scan_over': showOver }" v-if="showResult">
+        <img src="./assets/siri.png" @click="changeActive" :class="{
+          'siri': true,
+          'siri_inactive': isInactive
+        }" v-if="!hasVoice && !showOk" />
+        <img src="./assets/input.png" class="input" v-if="isInactive && !hasVoice" />
+        <div class="recommend" v-if="isInactive && !hasVoice">
+          <div class="recommend_item" v-for="(item, i) in recommendList" :key="i" @click="setOkState"
+            :style="{ animationDelay: `${1 + i * 0.3}s`, backgroundImage: `url(${getImageUrl(i)})` }">{{ item }}</div>
+        </div>
+        <img src="./assets/settings.png" class="settings" v-if="isInactive && !hasVoice">
+        <div class="text" v-if="hasVoice">{{ text }}</div>
+        <div class="bar_group" v-if="hasVoice">
+          <div v-for="i in 11" :key="i" class="bar" :style="{
+            height: `${heights[i - 1]}px`,
+          }"></div>
+        </div>
+        <img src="./assets/close.png" class="close" v-if="hasVoice" />
+        <img src="./assets/ok.png" class="ok" v-if="showOk && !showOver"></img>
+        <div class="countdown" v-if="showOk && !showOver">{{ `${countdown}s` }}</div>
       </div>
-      <img src="./assets/settings.png" class="settings" v-if="isInactive && !hasVoice">
-      <div class="text" v-if="hasVoice">{{ text }}</div>
-      <div class="bar_group" v-if="hasVoice">
-        <div v-for="i in 11" :key="i" class="bar" :style="{
-          height: `${heights[i - 1]}px`,
-        }"></div>
-      </div>
-      <img src="./assets/close.png" class="close" v-if="hasVoice" />
-      <img src="./assets/ok.png" class="ok" v-if="showOk && !showOver"></img>
-      <div class="countdown" v-if="showOk && !showOver">{{ `${countdown}s` }}</div>
     </div>
-    <button id="fullscreenButton" class="x" @click.stop="goFullScreen" v-if="showFullscreenButton">进入全屏</button>
+    <div v-else></div>
+    <button v-if="showFullscreenButton" class="x" @click.stop="goFullScreen">进入全屏</button>
+    <button v-if="showFullscreenButton" class="y" @click.stop="switchScene">切换场景</button>
   </main>
 </template>
 
@@ -54,6 +58,7 @@ let text = ref('');
 let heights = ref([4, 10, 20, 10, 30, 36, 30, 10, 20, 10, 4]);
 let countdown = ref(4);
 let showFullscreenButton = ref(true);
+let isFirstScene = ref(true);
 
 let recommendList = ref(['头像双击动作', '深色模式', '字体大小', '颜色', '更多']);
 const handleClick = () => {
@@ -220,6 +225,9 @@ const goFullScreen = () => {
       showFullscreenButton.value = false;
     });
   }
+}
+const switchScene = () => {
+  isFirstScene.value = !isFirstScene.value;
 }
 onMounted(() => {
   window.addEventListener('click', handleClick);
@@ -474,6 +482,15 @@ onMounted(() => {
 .x {
   position: fixed;
   top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  font-size: 20px;
+}
+
+.y {
+  position: fixed;
+  top: 150px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
