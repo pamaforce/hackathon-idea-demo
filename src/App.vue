@@ -1,7 +1,7 @@
 <template>
   <main class="main">
     <div v-if="isFirstScene" @click="handleClick">
-      <img src="./assets/qq_top.png" class="top" draggable="false">
+      <img src="./assets/qq_top.png" class="top">
       <img src="./assets/qq_message.png" class="message" v-if="showMessage">
       <img src="./assets/qq_pat.png" class="pat" v-if="showPat && !showOk" />
       <img src="./assets/qq_bottom.png"
@@ -33,7 +33,22 @@
         <div class="countdown" v-if="showOk && !showOver">{{ `${countdown}s` }}</div>
       </div>
     </div>
-    <div v-else></div>
+    <div v-else @click="handleTap">
+      <img :src="getMapBackgroundUrl(showMapOk || showMapOver)" class="map_bg">
+      <img src="./assets/siri.png" class="map_siri" v-if="showMapSiri" />
+      <div v-if="showMapVoice || showMapOk || showMapOver"
+        :class="{ 'map_voice': true, 'map_voice_ok': showMapOk, 'map_voice_over': showMapOver }">
+        <div class="text map_text" v-if="showMapVoice">{{ map_text }}</div>
+        <div class="bar_group map_bar_group" v-if="showMapVoice">
+          <div v-for="i in 11" :key="i" class="bar" :style="{
+            height: `${heights[i - 1]}px`,
+          }"></div>
+        </div>
+        <img src="./assets/close.png" class="close" v-if="showMapVoice" />
+        <img src="./assets/map_ok.png" class="ok" v-if="showMapOk && !showMapOver"></img>
+        <div class="countdown" v-if="showMapOk && !showMapOver">{{ `${countdown}s` }}</div>
+      </div>
+    </div>
     <button v-if="showFullscreenButton" class="x" @click.stop="goFullScreen">进入全屏</button>
     <button v-if="showFullscreenButton" class="y" @click.stop="switchScene">切换场景</button>
   </main>
@@ -52,9 +67,15 @@ let isInactive = ref(false);
 let hasVoice = ref(false);
 let showOk = ref(false);
 let showOver = ref(false);
+let showMapSiri = ref(false);
+let showMapVoice = ref(false);
+let showMapOk = ref(false);
+let showMapOver = ref(false);
 let step = ref(0);
 let finalText = '我想要关闭头像双击动作...'
 let text = ref('');
+let finalMapText = '我想关闭语音导航...'
+let map_text = ref('');
 let heights = ref([4, 10, 20, 10, 30, 36, 30, 10, 20, 10, 4]);
 let countdown = ref(4);
 let showFullscreenButton = ref(true);
@@ -127,8 +148,16 @@ const getImageUrl = (index) => {
       return new URL(`./assets/text_bg_3.png`, import.meta.url).href;
   }
 };
+
+const getMapBackgroundUrl = (type) => {
+  if (type) return new URL(`./assets/map_bg_1.png`, import.meta.url).href;
+  else return new URL(`./assets/map_bg_0.png`, import.meta.url).href;
+};
+
 const setOkState = () => {
   hasVoice.value = false;
+  const audio = new Audio(new URL('./assets/audio_0.wav', import.meta.url).href);
+  audio.play();
   isInactive.value = false;
   showOk.value = true;
   countdown.value = 3;
@@ -141,10 +170,26 @@ const setOkState = () => {
     }
   }, 1000);
 };
+const setMapOkState = () => {
+  showMapVoice.value = false;
+  const audio = new Audio(new URL('./assets/audio_2.wav', import.meta.url).href);
+  audio.play();
+  showMapOk.value = true;
+  countdown.value = 3;
+  let timerId = setInterval(() => {
+    if (countdown.value > 0) {
+      countdown.value--;
+    } else {
+      clearInterval(timerId);
+      showMapOver.value = true;
+    }
+  }, 1000);
+}
 const showVoiceResult = () => {
   if (isInactive.value) return;
   text.value = '';
   hasVoice.value = true;
+  let intervalId;
   intervalId = setInterval(updateHeights, 150);
   setTimeout(() => {
     const textArray = finalText.split('');
@@ -165,7 +210,6 @@ const showVoiceResult = () => {
 
 const maxCenterValue = 36;
 const fluctuationRange = 14;
-let intervalId;
 const updateHeights = () => {
   const centerIndex = Math.floor(heights.value.length / 2);
   for (let i = 0; i < heights.value.length; i++) {
@@ -177,6 +221,37 @@ const updateHeights = () => {
 
 const randomFluctuation = (range) => {
   return Math.random() * range - range / 2;
+}
+
+const handleTap = () => {
+  if (showMapSiri.value || showMapVoice.value || showMapOver.value || showMapOk.value) return;
+  showMapSiri.value = true;
+  setTimeout(() => {
+    const audio = new Audio(new URL('./assets/audio_1.wav', import.meta.url).href);
+    audio.play();
+    setTimeout(() => {
+      showMapSiri.value = false;
+      map_text.value = '';
+      showMapVoice.value = true;
+      let intervalId;
+      intervalId = setInterval(updateHeights, 150);
+      setTimeout(() => {
+        const textArray = finalMapText.split('');
+        let i = 0;
+        const timer = setInterval(() => {
+          map_text.value += textArray[i];
+          i++;
+          if (i === textArray.length) {
+            clearInterval(timer);
+            setTimeout(() => { clearInterval(intervalId) }, 1500)
+            setTimeout(() => {
+              setMapOkState();
+            }, 1800);
+          }
+        }, 150);
+      }, 300)
+    }, 2000);
+  }, 500);
 }
 
 watch(isInactive, (newVal) => {
@@ -211,18 +286,34 @@ const goFullScreen = () => {
   if (document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen().then(() => {
       showFullscreenButton.value = false;
+      nextTick(() => {
+        switchScene();
+        nextTick(() => { switchScene(); });
+      });
     });
   } else if (document.documentElement.mozRequestFullScreen) { // Firefox
     document.documentElement.mozRequestFullScreen().then(() => {
       showFullscreenButton.value = false;
+      nextTick(() => {
+        switchScene();
+        nextTick(() => { switchScene(); });
+      });
     });
   } else if (document.documentElement.webkitRequestFullscreen) { // Chrome, Safari and Opera
     document.documentElement.webkitRequestFullscreen().then(() => {
       showFullscreenButton.value = false;
+      nextTick(() => {
+        switchScene();
+        nextTick(() => { switchScene(); });
+      });
     });
   } else if (document.documentElement.msRequestFullscreen) { // IE/Edge
     document.documentElement.msRequestFullscreen().then(() => {
       showFullscreenButton.value = false;
+      nextTick(() => {
+        switchScene();
+        nextTick(() => { switchScene(); });
+      });
     });
   }
 }
@@ -497,6 +588,49 @@ onMounted(() => {
   font-size: 20px;
 }
 
+.map_bg {
+  width: 100%;
+  height: 100vh;
+}
+
+.map_siri {
+  position: fixed;
+  width: 100px;
+  height: 100px;
+  bottom: 140px;
+  left: calc(50% - 50px);
+  transform: scale(0);
+  animation: scaleIn 0.5s 1s forwards;
+}
+
+.map_voice {
+  position: fixed;
+  width: var(--width);
+  left: calc(50% - var(--width) / 2);
+  bottom: 0;
+  height: 200px;
+  animation: bottomUp 0.5s forwards;
+  background: linear-gradient(180deg, #F6ADFD -65.48%, #D7EFFE 100%);
+  border-radius: 16px 16px 0 0;
+  transition: all 0.5s;
+}
+
+.map_text {
+  top: 50px;
+}
+
+.map_bar_group {
+  top: 102px;
+}
+
+.map_voice_ok {
+  height: 80px;
+}
+
+.map_voice_over {
+  height: 0;
+}
+
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -593,7 +727,16 @@ onMounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
 
+@keyframes scaleIn {
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 @media screen and (max-width: 475px) {
