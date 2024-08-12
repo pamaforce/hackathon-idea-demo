@@ -262,7 +262,7 @@ onMounted(() => {
 }
 
 .bottom {
-  width: 100%;
+  width: var(--width);
   position: fixed;
   bottom: 0;
   left: 0;
