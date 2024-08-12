@@ -85,47 +85,48 @@ onMounted(() => {
 
 <style scoped>
 .main {
-  width: 100vw;
-  max-width: 737px;
-  height: 216.282vw;
-  max-height: 1594px;
+  --width: 475px;
+  width: var(--width);
+  height: 100vh;
   background-color: #f1f1f1;
   user-select: none;
+  position: relative;
+  margin: 0 auto;
 }
 
 .top {
   width: 100%;
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
 }
 
 .message {
   width: 42.4%;
-  position: fixed;
+  position: absolute;
   right: 0;
-  top: 22.92vw;
+  top: calc(0.2292 * var(--width));
   animation: rightIn 0.2s forwards;
 }
 
 .pat {
-  position: fixed;
+  position: absolute;
   width: 26.24%;
-  top: 43vw;
+  top: calc(0.43 * var(--width));
   left: 50%;
   transform: translateX(-50%);
 }
 
 .bottom {
   width: 100%;
-  position: fixed;
+  position: absolute;
   bottom: 0;
   left: 0;
 }
 
 .tip {
-  width: 100%;
-  position: fixed;
+  width: var(--width);
+  position: absolute;
   bottom: 0;
   left: 0;
   animation: fadeIn 0.5s forwards;
@@ -154,6 +155,12 @@ onMounted(() => {
 
   100% {
     transform: translateX(0);
+  }
+}
+
+@media screen and (max-width: 475px) {
+  .main {
+    --width: 100vw;
   }
 }
 </style>
